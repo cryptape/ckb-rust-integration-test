@@ -16,4 +16,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Test
-      run: cd v0106/ && cargo test -- --nocapture
+      run: cd feature/ && cargo test --test integration0108_test -- --nocapture
