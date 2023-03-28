@@ -1,7 +1,6 @@
 mod common;
 
 use ckb_jsonrpc_types::{Transaction, Uint64};
-// use v0106::rpc::ckb::CkbRpcClient; //!todo tag
 use ckb_sdk::CkbRpcClient;
 
 #[test]
