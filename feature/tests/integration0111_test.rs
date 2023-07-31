@@ -14,13 +14,15 @@ async fn test_estimate_cycles() {
     match method {
         "estimate_cycles" => {
             println!(
-                "Formatted Response Data:\n{}",
+                "Formatted Request Data:\n{}, Formatted Response Data:\n{}",
+                serde_json::to_string_pretty(&result.request_data).unwrap(),
                 serde_json::to_string_pretty(&result.response_data).unwrap()
 
             );
         }
         // 添加其他方法的匹配和断言
         _ => {
+            assert_ne!(0, result.response_data["result"]["cycles"]);
             // 处理未知方法名的情况
             panic!("Unknown method: {}", method.to_string());
         }

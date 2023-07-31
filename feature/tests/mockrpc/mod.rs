@@ -38,7 +38,7 @@ pub async fn get_mock_test_data(method: &str, params: &str) -> Result<MockData, 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MockData {
     pub(crate) rpc_client: RPCClient,
-    request_data: serde_json::Value,
+    pub(crate) request_data: serde_json::Value,
     pub(crate) response_data: serde_json::Value,
 }
 
