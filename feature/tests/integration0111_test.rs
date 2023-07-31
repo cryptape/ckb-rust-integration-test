@@ -8,7 +8,7 @@ mod common;
 
 
 #[test]
-#[ignore]
+// #[ignore]
 fn test_estimate_cycles() {
     // 获取方法名和参数
     let method = "estimate_cycles";
@@ -43,7 +43,7 @@ fn test_estimate_cycles() {
 }
 
 #[test]
-#[ignore]
+// #[ignore]
 fn test_get_block() {
     // 获取方法名和参数
     let method = "get_block";
@@ -64,7 +64,7 @@ fn test_get_block() {
 }
 
 #[test]
-#[ignore]
+// #[ignore]
 fn test_get_consensus() {
     // 获取方法名和参数
     let method = "get_consensus";
