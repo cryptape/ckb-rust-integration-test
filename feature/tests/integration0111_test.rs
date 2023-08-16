@@ -1,4 +1,5 @@
-use ckb_jsonrpc_types::Transaction;
+use std::fmt::Debug;
+use ckb_jsonrpc_types::{DeploymentPos, Transaction, Uint64};
 use ckb_sdk::CkbRpcClient;
 use ckb_types::{H256, h256};
 use crate::common::remove_quotes;
@@ -8,7 +9,7 @@ mod common;
 
 
 #[test]
-// #[ignore]
+#[ignore]
 fn test_estimate_cycles() {
     // 获取方法名和参数
     let method = "estimate_cycles";
@@ -43,7 +44,7 @@ fn test_estimate_cycles() {
 }
 
 #[test]
-// #[ignore]
+#[ignore]
 fn test_get_block() {
     // 获取方法名和参数
     let method = "get_block";
@@ -64,7 +65,7 @@ fn test_get_block() {
 }
 
 #[test]
-// #[ignore]
+#[ignore]
 fn test_get_consensus() {
     // 获取方法名和参数
     let method = "get_consensus";
@@ -80,12 +81,16 @@ fn test_get_consensus() {
 // #[ignore]
 fn test_get_deployments_info() {
     // 获取方法名和参数
+    let param = "[]";
     let method = "get_deployments_info";
-    let params = "[]";
+
     // 调用 mock_rpc 函数获取结果
-    let result = mockrpc::get_mock_test_data(method, params).unwrap();
-    println!("{:#?}", result.response_data);
+    let result = mockrpc::get_mock_test_data(method, param).unwrap();
+    println!("mock:{:#?}", remove_quotes(&serde_json::to_string(
+        &result.response_data["result"]["deployments"]["testdummy"]["state"]).unwrap()));
     let mut ckb_client = CkbRpcClient::new(&*result.url);
     let deployments_info = ckb_client.get_deployments_info();
-    println!("{:#?}", deployments_info);
+    println!("client:{:#?}", deployments_info.unwrap().deployments.get(&DeploymentPos::Testdummy).unwrap().state);
+    assert_eq!(remove_quotes(&serde_json::to_string(
+        &result.response_data["result"]["deployments"]["testdummy"]["state"]).unwrap()), "failed")
 }

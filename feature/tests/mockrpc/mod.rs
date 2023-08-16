@@ -3,7 +3,6 @@ use reqwest::blocking::Client;
 
 pub fn get_mock_test_data(method: &str, params: &str) -> Result<MockData, Box<dyn std::error::Error>> {
     let url = format!("http://127.0.0.1:5000/test/{}/{}", method, params);
-    println!("debug:{}", url);
     let client = Client::new();
     let response = client.get(&url).send()?;
 
