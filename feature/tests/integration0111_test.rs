@@ -1,96 +1,50 @@
-use std::fmt::Debug;
-use ckb_jsonrpc_types::{DeploymentPos, Transaction, Uint64};
-use ckb_sdk::CkbRpcClient;
-use ckb_types::{H256, h256};
-use crate::common::remove_quotes;
 
 mod mockrpc;
 mod common;
 
+use std::fmt::Debug;
+use ckb_jsonrpc_types::{Cycle, DeploymentPos, Transaction};
+use ckb_types::H256;
+use crate::common::remove_quotes;
+use serde::Serialize;
+use crate::mockrpc::mock_rpc_data;
+use crate::mockrpc::MockRpcData;
+use rstest::*;
 
-#[test]
-#[ignore]
-fn test_estimate_cycles() {
-    // 获取方法名和参数
-    let method = "estimate_cycles";
-    let params = "[tx]";
-
-    // 调用 mock_rpc 函数获取结果
-    let result = mockrpc::get_mock_test_data(method, params).unwrap();
-    let mut ckb_client = CkbRpcClient::new(&*result.url);
-    let json_str = serde_json::to_string(&result.request_data["params"][0]).unwrap();
+#[rstest(mock_rpc_data("estimate_cycles", "[tx]"))]
+fn estimate_cycles_tx(mock_rpc_data: MockRpcData) {
+    let mut ckb_client = mock_rpc_data.client();
+    let json_str = serde_json::to_string(&mock_rpc_data.request_data["params"][0]).unwrap();
     let transaction: Transaction = serde_json::from_str(&*json_str).unwrap();
-    // Now you can use the `transaction` variable as needed
-    println!("{:?}", transaction);
-    // Call the synchronous method within an asynchronous context
-    let cycles = ckb_client.estimate_cycles(transaction).unwrap().cycles.value();
-    println!("{:#?}", cycles);
-
-    match method {
-        "estimate_cycles" => {
-            println!(
-                "Formatted Request Data:\n{}, Formatted Response Data:\n{}",
-                serde_json::to_string_pretty(&result.request_data).unwrap(),
-                serde_json::to_string_pretty(&result.response_data).unwrap()
-
-            );
-        }
-        _ => {
-            assert_eq!(format!("0x{:x}", cycles), result.response_data["result"]["cycles"]);
-            // 处理未知方法名的情况
-            panic!("Unknown method: {}", method.to_string());
-        }
-    }
+    let cycle = ckb_client.estimate_cycles(transaction).unwrap();
+    let request_cycle: &Cycle = &serde_json::from_value(mock_rpc_data.response_data["result"]["cycles"].clone()).unwrap();
+    assert_eq!(request_cycle.value(), cycle.cycles.value());
 }
 
-#[test]
-#[ignore]
-fn test_get_block() {
-    // 获取方法名和参数
-    let method = "get_block";
-    let params = "[block_hash]";
-    let params2 = "data2";
-    // 调用 mock_rpc 函数获取结果
-    let result = mockrpc::get_mock_test_data(method, params).unwrap();
-    // let result2 = mockrpc::get_mock_test_data(method, params2).unwrap();
-    let mut ckb_client = CkbRpcClient::new(&*result.url);
-    // let mut ckb_client2 = CkbRpcClient::new(&*result2.url);
-    const CODE_HASH: H256 = h256!("0xa5f5c85987a15de25661e5a214f2c1449cd803f071acc7999820f25246471f40");
-    let block = ckb_client.get_block(CODE_HASH).unwrap().unwrap();
-    // let block2 = ckb_client2.get_block(CODE_HASH).unwrap().unwrap();
-    println!("{:#?}", block);
-    // println!("{:#?}", block2);
+#[rstest(mock_rpc_data("get_block", "[block_hash]"))]
+fn get_block_block_hash(mock_rpc_data: MockRpcData) {
+    let mut ckb_client = mock_rpc_data.client();
+    let code_hash: H256 = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
+    let block = ckb_client.get_block(code_hash).unwrap().unwrap();
     assert_eq!("0x".to_owned() + &block.header.hash.to_string(), remove_quotes(&serde_json::to_string(
-        &result.response_data["result"]["header"]["hash"]).unwrap()));
+        &mock_rpc_data.response_data["result"]["header"]["hash"]).unwrap()));
 }
 
-#[test]
-#[ignore]
-fn test_get_consensus() {
-    // 获取方法名和参数
-    let method = "get_consensus";
-    let params = "[]";
-    // 调用 mock_rpc 函数获取结果
-    let result = mockrpc::get_mock_test_data(method, params).unwrap();
-    let mut ckb_client = CkbRpcClient::new(&*result.url);
-    let consensus = ckb_client.get_consensus();
-    println!("{:#?}", consensus);
+#[rstest(mock_rpc_data("get_consensus", "[]"))]
+fn get_consensus(mock_rpc_data: MockRpcData) {
+    let mut ckb_client = mock_rpc_data.client();
+    let consensus = ckb_client.get_consensus().unwrap();
+    assert_eq!(
+        serde_json::to_string(&consensus.block_version).unwrap(),
+        serde_json::to_string(&mock_rpc_data.response_data["result"]["block_version"]).unwrap()
+    )
 }
 
-#[test]
-// #[ignore]
-fn test_get_deployments_info() {
-    // 获取方法名和参数
-    let param = "[]";
-    let method = "get_deployments_info";
-
-    // 调用 mock_rpc 函数获取结果
-    let result = mockrpc::get_mock_test_data(method, param).unwrap();
-    println!("mock:{:#?}", remove_quotes(&serde_json::to_string(
-        &result.response_data["result"]["deployments"]["testdummy"]["state"]).unwrap()));
-    let mut ckb_client = CkbRpcClient::new(&*result.url);
-    let deployments_info = ckb_client.get_deployments_info();
-    println!("client:{:#?}", deployments_info.unwrap().deployments.get(&DeploymentPos::Testdummy).unwrap().state);
-    assert_eq!(remove_quotes(&serde_json::to_string(
-        &result.response_data["result"]["deployments"]["testdummy"]["state"]).unwrap()), "failed")
+#[rstest(mock_rpc_data("get_deployments_info", "[]"))]
+fn get_deployments_info(mock_rpc_data: MockRpcData) {
+    let deployments_info = mock_rpc_data.client().get_deployments_info().unwrap();
+    assert_eq!(
+        &serde_json::to_string(&mock_rpc_data.response_data["result"]["deployments"]["testdummy"]["state"]).unwrap(),
+        &serde_json::to_string(&deployments_info.deployments.get(&DeploymentPos::Testdummy).unwrap().state).unwrap()
+    )
 }
