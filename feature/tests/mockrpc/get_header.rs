@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("get_header", "[block_hash,verbosity=0]"))]
-fn get_header_verbosity_0(mock_rpc_data: MockRpcData) {
+fn get_header_with_block_hash_verbosity_0(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数
@@ -16,7 +16,7 @@ fn get_header_verbosity_0(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_header", "[block_hash,verbosity=1]"))]
-fn get_header_verbosity_1(mock_rpc_data: MockRpcData) {
+fn get_header_with_block_hash_verbosity_1(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
 
     assert!(false,"get_header/[block_hash,verbosity=1]")
@@ -32,7 +32,7 @@ fn get_header_verbosity_1(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_header", "[block_hash]"))]
-fn get_header_default_verbosity(mock_rpc_data: MockRpcData) {
+fn get_header_with_block_hash(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数

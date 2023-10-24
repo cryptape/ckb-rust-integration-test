@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("tx_pool_info", "[]"))]
-fn tx_pool_info_empty_params(mock_rpc_data: MockRpcData) {
+fn tx_pool_info(mock_rpc_data: MockRpcData) {
     let  ckb_client = mock_rpc_data.client();
 
     // 调用被测试的函数

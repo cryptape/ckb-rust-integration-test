@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("set_ban", "[address,command,ban_time,absolute,reason]"))]
-fn set_ban_with_params(mock_rpc_data: MockRpcData) {
+fn set_ban_with_address_command_ban_time_absolute_reason(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数

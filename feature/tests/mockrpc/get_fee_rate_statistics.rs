@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("get_fee_rate_statistics", "[]"))]
-fn get_fee_rate_statistics_empty(mock_rpc_data: MockRpcData) {
+fn get_fee_rate_statistics(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
     assert!(false,"not support get_fee_rate_statistics/[]")
     // 调用被测试的函数
@@ -30,7 +30,7 @@ fn get_fee_rate_statistics_with_target(mock_rpc_data: MockRpcData) {
 // TODO check result can be null  bug:  FeeRateStatistics should option(FeeRateStatistics)
 #[rstest(mock_rpc_data("get_fee_rate_statistics", "null"))]
 #[ignore]
-fn get_fee_rate_statistics_null(mock_rpc_data: MockRpcData) {
+fn get_fee_rate_statistics_with_null(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 调用被测试的函数

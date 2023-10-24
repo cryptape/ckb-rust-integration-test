@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("tx_pool_ready", "[]"))]
-fn tx_pool_ready_empty_params(mock_rpc_data: MockRpcData) {
+fn tx_pool_ready(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     let result = ckb_client.tx_pool_ready().unwrap();

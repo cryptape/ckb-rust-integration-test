@@ -3,7 +3,7 @@ use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 
 #[rstest(mock_rpc_data("get_live_cell", "[out_point,with_data=false]"))]
-fn get_live_cell_with_data_false(mock_rpc_data: MockRpcData) {
+fn get_live_cell_with_out_point_with_data_false(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数
@@ -18,7 +18,7 @@ fn get_live_cell_with_data_false(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_live_cell", "[out_point,with_data=true]"))]
-fn get_live_cell_with_data_true(mock_rpc_data: MockRpcData) {
+fn get_live_cell_with_out_point_with_data_true(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数

@@ -3,7 +3,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("get_transaction", "[tx_hash,verbosity=0]"))]
-fn get_transaction_with_verbosity_0(mock_rpc_data: MockRpcData) {
+fn get_transaction_with_tx_hash_verbosity_0(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数
@@ -17,7 +17,7 @@ fn get_transaction_with_verbosity_0(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_transaction", "[tx_hash,verbosity,only_committed=null]"))]
-fn get_transaction_with_verbosity_and_only_committed_null(mock_rpc_data: MockRpcData) {
+fn get_transaction_with_tx_hash_verbosity_only_committed_null(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
 
     assert!(false,"get_transaction/[tx_hash,verbosity,only_committed=null]")
@@ -34,7 +34,7 @@ fn get_transaction_with_verbosity_and_only_committed_null(mock_rpc_data: MockRpc
 }
 
 #[rstest(mock_rpc_data("get_transaction", "[tx_hash,verbosity=null,only_committed=true]"))]
-fn get_transaction_with_verbosity_null_and_only_committed_true(mock_rpc_data: MockRpcData) {
+fn get_transaction_with_tx_hash_verbosity_null_only_committed_true(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
     assert!(false,"get_transaction/[tx_hash,verbosity=null,only_committed=true]")
 

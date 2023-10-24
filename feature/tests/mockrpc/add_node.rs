@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("add_node", "[peer_id,address]"))]
-fn add_node_peer_id_address(mock_rpc_data: MockRpcData) {
+fn add_node_with_peer_id_address(mock_rpc_data: MockRpcData) {
     println!("method:{}",mock_rpc_data.method);
     println!("params:{}",mock_rpc_data.params);
     let ckb_client = mock_rpc_data.client();

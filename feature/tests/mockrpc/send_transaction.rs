@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("send_transaction", "data2"))]
-fn send_transaction_data2(mock_rpc_data: MockRpcData) {
+fn send_transaction_with_data2(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数
@@ -18,7 +18,7 @@ fn send_transaction_data2(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("send_transaction", "TransactionFailedToResolve"))]
-fn send_transaction_transaction_failed_to_resolve(mock_rpc_data: MockRpcData) {
+fn send_transaction_with_transaction_failed_to_resolve(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数

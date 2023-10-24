@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("get_indexer_tip", "[]"))]
-fn get_indexer_tip_empty(mock_rpc_data: MockRpcData) {
+fn get_indexer_tip(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 调用被测试的函数

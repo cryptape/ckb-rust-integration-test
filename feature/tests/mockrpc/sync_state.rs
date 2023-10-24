@@ -2,7 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("sync_state", "[]"))]
-fn sync_state_empty_params(mock_rpc_data: MockRpcData) {
+fn sync_state(mock_rpc_data: MockRpcData) {
     let  ckb_client = mock_rpc_data.client();
 
     // 调用被测试的函数

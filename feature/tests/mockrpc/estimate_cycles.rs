@@ -3,7 +3,7 @@ use crate::mockrpc::{mock_rpc_data, MockRpcData};
 use ckb_jsonrpc_types::{Cycle, Transaction};
 
 #[rstest(mock_rpc_data("estimate_cycles", "[tx]"))]
-fn estimate_cycles_tx(mock_rpc_data: MockRpcData) {
+fn estimate_cycles_with_tx(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     let transaction: Transaction = serde_json::from_value(

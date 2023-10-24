@@ -3,7 +3,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("get_deployments_info", "[]"))]
-fn get_deployments_info_empty(mock_rpc_data: MockRpcData) {
+fn get_deployments_info(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 调用被测试的函数

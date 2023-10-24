@@ -19,7 +19,7 @@ fn get_transaction_and_witness_proof_with_hashs(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_transaction_and_witness_proof", "[tx_hashs,block_hash]"))]
-fn get_transaction_and_witness_proof_with_tx_hashs_and_block_hash(mock_rpc_data: MockRpcData) {
+fn get_transaction_and_witness_proof_with_tx_hashs_block_hash(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     // 反序列化输入参数

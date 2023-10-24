@@ -4,7 +4,7 @@ use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 // TODO support  get_packed_block
 #[rstest(mock_rpc_data("get_block", "[block_hash]"))]
-fn get_block_block_hash(mock_rpc_data: MockRpcData) {
+fn get_block_with_block_hash(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     let block_hash: H256 = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
@@ -19,7 +19,7 @@ fn get_block_block_hash(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_block", "[block_hash,verbosiby=2,with_cycles=True]"))]
-fn get_block_block_hash_verbosiby_2_with_cycles_true(mock_rpc_data: MockRpcData) {
+fn get_block_with_block_hash_verbosiby_2_with_cycles_true(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
     assert!(false,"not support: get_block/[block_hash,verbosiby=2,with_cycles=True]")
 
@@ -27,7 +27,7 @@ fn get_block_block_hash_verbosiby_2_with_cycles_true(mock_rpc_data: MockRpcData)
 
 
 #[rstest(mock_rpc_data("get_block", "[block_hash,null,with_cycles=True]"))]
-fn get_block_block_hash_null_with_cycles_true(mock_rpc_data: MockRpcData) {
+fn get_block_with_block_hash_null_with_cycles_true(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
     let block_hash: H256 = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
     let (block,cycle) = ckb_client.get_block_with_cycles(block_hash).unwrap().unwrap();
@@ -37,7 +37,7 @@ fn get_block_block_hash_null_with_cycles_true(mock_rpc_data: MockRpcData) {
 
 
 #[rstest(mock_rpc_data("get_block", "[block_hash,verbosity=0]"))]
-fn get_block_block_hash_verbosity_0(mock_rpc_data: MockRpcData) {
+fn get_block_with_block_hash_verbosity_0(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
     let block_hash: H256 = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
     let block = ckb_client.get_packed_block(block_hash).unwrap();
@@ -45,13 +45,13 @@ fn get_block_block_hash_verbosity_0(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_block", "[block_hash,verbosity=2]"))]
-fn get_block_block_hash_verbosity_2(mock_rpc_data: MockRpcData) {
+fn get_block_with_block_hash_verbosity_2(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
     assert!(false,"not support: get_block/[block_hash,verbosiby=2]")
 }
 
 #[rstest(mock_rpc_data("get_block", "data2"))]
-fn get_block_data2(mock_rpc_data: MockRpcData) {
+fn get_block_with_data2(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     let block_hash: H256 = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
@@ -66,7 +66,7 @@ fn get_block_data2(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_block", "extension2"))]
-fn get_block_extension2(mock_rpc_data: MockRpcData) {
+fn get_block_with_extension2(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
     let block_hash: H256 = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
     let block = ckb_client.get_block(block_hash).unwrap();

@@ -3,7 +3,7 @@ use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 
 #[rstest(mock_rpc_data("get_banned_addresses", "[]"))]
-fn get_banned_addresses_empty(mock_rpc_data: MockRpcData) {
+fn get_banned_addresses(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
 
     let response = ckb_client.get_banned_addresses().unwrap();
