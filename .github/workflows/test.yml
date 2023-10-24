@@ -31,7 +31,7 @@ jobs:
         secret_key: ${{ secrets.SECRET_KEY }}
         bucket_name: acceptance-test
         key: ckb-rust-integration-test/test-report.md
-        local_file: feature/test-report.md
+        local_file: /home/runner/work/ckb-rust-integration-test/ckb-rust-integration-test/feature/test-report.md
     - name: print download url
       if: failure()
       run: |
