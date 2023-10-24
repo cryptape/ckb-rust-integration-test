@@ -20,10 +20,13 @@ jobs:
         sh prepare.sh
         cd feature
         rustup toolchain install nightly
-        cargo install markdown-test-report
         cargo +nightly test -- --format=json -Z unstable-options --report-time > test-report.json
+        
+    - name: Upload to Qiniu
+      if: failure()
+      run: | 
+        cargo install markdown-test-report
         markdown-test-report test-report.json -o test-report.md
-
     - name: Upload to Qiniu
       if: failure()
       uses: gpBlockchain/upload-to-qiniu-action@main
