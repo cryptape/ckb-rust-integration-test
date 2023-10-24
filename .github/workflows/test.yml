@@ -43,7 +43,3 @@ jobs:
         log_message="https://github-test-logs.ckbapp.dev/ckb-rust-integration-test/test-report.md"
         echo "::set-output name=log_message::$log_message"
         echo $log_message
-
-    - name: Setup upterm session
-      if: ${{ failure() }}
-      uses: lhotari/action-upterm@v1
