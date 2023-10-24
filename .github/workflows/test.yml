@@ -28,8 +28,6 @@ jobs:
         cd feature
         cargo install markdown-test-report
         markdown-test-report test-report.json -o test-report.md
-        sudo apt-get install pandoc -y
-        pandoc test-report.md -o test-report.html
     - name: Upload to Qiniu
       if: failure()
       uses: gpBlockchain/upload-to-qiniu-action@main
@@ -37,12 +35,15 @@ jobs:
         access_key: ${{ secrets.ACCESS_KEY }}
         secret_key: ${{ secrets.SECRET_KEY }}
         bucket_name: acceptance-test
-        key: ckb-rust-integration-test/test-report.html
-        local_file: /home/runner/work/ckb-rust-integration-test/ckb-rust-integration-test/feature/test-report.html
+        key: ckb-rust-integration-test/test-report.md
+        local_file: /home/runner/work/ckb-rust-integration-test/ckb-rust-integration-test/feature/test-report.md
     - name: print download url
       if: failure()
       run: |
-        log_message="https://github-test-logs.ckbapp.dev/ckb-rust-integration-test/test-report.html"
+        log_message="https://github-test-logs.ckbapp.dev/ckb-rust-integration-test/test-report.md"
         echo "::set-output name=log_message::$log_message"
         echo $log_message
-    
+
+    - name: Setup upterm session
+      if: ${{ failure() }}
+      uses: lhotari/action-upterm@v1
