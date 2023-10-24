@@ -22,9 +22,10 @@ jobs:
         rustup toolchain install nightly
         cargo +nightly test -- --format=json -Z unstable-options --report-time > test-report.json
         
-    - name: Upload to Qiniu
+    - name: json to report md
       if: failure()
-      run: | 
+      run: |
+        cd feature
         cargo install markdown-test-report
         markdown-test-report test-report.json -o test-report.md
     - name: Upload to Qiniu
