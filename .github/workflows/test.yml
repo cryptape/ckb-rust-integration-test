@@ -20,6 +20,7 @@ jobs:
         sh prepare.sh
         cd feature
         rustup toolchain install nightly
+        cargo install markdown-test-report
         cargo +nightly test -- --format=json -Z unstable-options --report-time > test-report.json
         markdown-test-report test-report.json -o test-report.md
 
