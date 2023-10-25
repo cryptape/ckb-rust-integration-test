@@ -32,7 +32,7 @@ fn get_block_with_block_hash_null_with_cycles_true(mock_rpc_data: MockRpcData) {
     let block_hash: H256 = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
     let (block,cycle) = ckb_client.get_block_with_cycles(block_hash).unwrap().unwrap();
     assert_eq!(block, serde_json::from_value(mock_rpc_data.response_data["result"]["block"].clone()).unwrap());
-    assert_eq!(cycle.len(), mock_rpc_data.response_data["result"]["cycle"].as_array().unwrap().len());
+    assert_eq!(cycle.len(), mock_rpc_data.response_data["result"]["cycles"].as_array().unwrap().len());
 }
 
 
