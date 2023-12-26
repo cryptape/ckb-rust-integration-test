@@ -19,8 +19,10 @@ fn get_block_with_block_hash(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_block", "[block_hash,verbosiby=2,with_cycles=True]"))]
+#[ignore]
 fn get_block_with_block_hash_verbosiby_2_with_cycles_true(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
+    // like [block_hash,null,with_cycles=True]
     assert!(false,"not support: get_block/[block_hash,verbosiby=2,with_cycles=True]")
 
 }
@@ -45,8 +47,10 @@ fn get_block_with_block_hash_verbosity_0(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_block", "[block_hash,verbosity=2]"))]
+#[ignore]
 fn get_block_with_block_hash_verbosity_2(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
+    // like [block_hash]
     assert!(false,"not support: get_block/[block_hash,verbosiby=2]")
 }
 

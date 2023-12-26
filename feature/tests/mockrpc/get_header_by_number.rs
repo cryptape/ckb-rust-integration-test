@@ -16,8 +16,10 @@ fn get_header_by_number_with_block_number(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_header_by_number", "[block_number,null]"))]
+#[ignore]
 fn get_header_by_number_with_block_number_null(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
+    // like [block_number]
     assert!(false,"get_header_by_number/[block_number,null]")
 }
 
@@ -36,9 +38,10 @@ fn get_header_by_number_with_block_number_verbosity_0(mock_rpc_data: MockRpcData
 }
 
 #[rstest(mock_rpc_data("get_header_by_number", "[block_number,verbosity=1]"))]
+#[ignore]
 fn get_header_by_number_with_block_number_verbosity_1(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
-
+    // like [block_number]
     assert!(false,"get_header_by_number/[block_number,verbosity=1]")
 
     // 反序列化输入参数

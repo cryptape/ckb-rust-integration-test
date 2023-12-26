@@ -2,13 +2,14 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("get_fee_rate_statics", "[]"))]
+#[ignore]
 fn get_fee_rate_statics(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
-    assert!(false,"not support get_fee_rate_statics/[]")
+    // like [null]
+    // assert!(false,"not support get_fee_rate_statics/[]")
     // // 调用被测试的函数
     // let statistics = ckb_client.get_fee_rate_statics(None).unwrap();
     //
-    // // 比较输出结果
     // assert_eq!(statistics, serde_json::from_value(mock_rpc_data.response_data["result"].clone()).unwrap());
 }
 

@@ -1,9 +1,13 @@
+use std::str::FromStr;
+use ckb_sdk::HumanCapacity;
 use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("get_raw_tx_pool", "[]"))]
+#[ignore]
 fn get_raw_tx_pool(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
+    // like [null]
     assert!(false,"get_raw_tx_pool/[]")
     // 调用被测试的函数
     // let response = ckb_client.get_raw_tx_pool().unwrap();

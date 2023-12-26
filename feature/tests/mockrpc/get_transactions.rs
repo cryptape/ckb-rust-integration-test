@@ -2,6 +2,7 @@ use rstest::rstest;
 use crate::mockrpc::{mock_rpc_data, MockRpcData};
 
 #[rstest(mock_rpc_data("get_transactions", "[search_key,order,limit]"))]
+#[ignore]
 fn get_transactions_with_search_key_order_limit(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
     assert!(false,"get_transactions/[search_key,order,limit]")

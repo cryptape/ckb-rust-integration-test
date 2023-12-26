@@ -16,6 +16,7 @@ fn get_tip_header(mock_rpc_data: MockRpcData) {
 #[ignore]
 fn get_tip_header_with_null(mock_rpc_data: MockRpcData) {
     let _client = mock_rpc_data.client();
+    // like []
     assert!(false,"not support get_tip_header/[null]")
 }
 
@@ -35,4 +36,5 @@ fn get_tip_header_with_verbosity_0(mock_rpc_data: MockRpcData) {
 fn get_tip_header_with_verbosity_1(mock_rpc_data: MockRpcData) {
     // 跳过测试用例
     let _client = mock_rpc_data.client();
+    // like []
 }

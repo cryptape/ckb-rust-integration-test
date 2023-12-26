@@ -16,10 +16,12 @@ fn get_header_with_block_hash_verbosity_0(mock_rpc_data: MockRpcData) {
 }
 
 #[rstest(mock_rpc_data("get_header", "[block_hash,verbosity=1]"))]
+#[ignore]
 fn get_header_with_block_hash_verbosity_1(mock_rpc_data: MockRpcData) {
     let _ckb_client = mock_rpc_data.client();
+    // like [block_hash]
 
-    assert!(false,"get_header/[block_hash,verbosity=1]")
+    // assert!(false,"get_header/[block_hash,verbosity=1]")
     // 反序列化输入参数
     // let block_hash = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
     // let verbosity = "0x1";
