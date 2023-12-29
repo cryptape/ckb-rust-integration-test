@@ -1,64 +1,26 @@
-mod add_node;
-mod calculate_dao_field;
-mod calculate_dao_maximum_withdraw;
-mod clear_banned_addresses;
-mod clear_tx_pool;
-mod dry_run_transaction;
-mod estimate_cycles;
-mod generate_block;
-mod generate_block_with_template;
-mod get_banned_addresses;
-mod get_block;
-mod get_block_by_number;
-mod get_block_economic_state;
-mod get_block_filter;
-mod get_block_hash;
-mod get_block_median_time;
-mod get_block_template;
-mod get_blockchain_info;
+mod fetch_header;
+mod fetch_transaction;
 mod get_cells;
 mod get_cells_capacity;
-mod get_consensus;
-mod get_current_epoch;
-mod get_deployments_info;
-mod get_epoch_by_number;
-mod get_fee_rate_statics;
-mod get_fee_rate_statistics;
+mod get_genesis_block;
 mod get_header;
-mod get_header_by_number;
-mod get_indexer_tip;
-mod get_live_cell;
 mod get_peers;
-mod get_raw_tx_pool;
-mod get_tip_block_number;
+mod get_scripts;
 mod get_tip_header;
 mod get_transaction;
-mod get_transaction_and_witness_proof;
-mod get_transaction_proof;
 mod get_transactions;
 mod local_node_info;
-mod ping_peers;
-mod remove_node;
-mod remove_transaction;
-mod send_alert;
 mod send_transaction;
-mod set_ban;
-mod set_network_active;
-mod submit_block;
-mod sync_state;
-mod truncate;
-mod tx_pool_info;
-mod tx_pool_ready;
-mod verify_transaction_and_witness_proof;
-mod verify_transaction_proof;
+mod set_scripts;
 
-use ckb_sdk::CkbRpcClient;
+use ckb_sdk::rpc::LightClientRpcClient;
+// use ckb_sdk::LightClientRpcClient;
 use reqwest::blocking::Client;
 use rstest::*;
 
 
 pub fn get_mock_test_data(method: &str, params: &str) -> Result<MockData, Box<dyn std::error::Error>> {
-    let url = format!("http://127.0.0.1:5000/test/{}/{}", method, params);
+    let url = format!("http://127.0.0.1:5001/test/{}/{}", method, params);
     let client = Client::new();
     let response = client.get(&url).send()?;
 
@@ -115,8 +77,8 @@ impl MockRpcData {
     //     let result = get_mock_test_data(self.method.as_str(), self.params.as_str()).unwrap();
     //     result
     // }
-    pub fn client(&self) -> CkbRpcClient {
-        let client = CkbRpcClient::new(self.url.as_str());
+    pub fn client(&self) -> LightClientRpcClient {
+        let client = LightClientRpcClient::new(self.url.as_str());
         client
     }
 }
