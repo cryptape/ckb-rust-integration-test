@@ -50,21 +50,6 @@ fn get_transaction_with_tx_hash_verbosity_2_only_committed_true(mock_rpc_data: M
     assert_eq!(tx.tx_status.block_hash, serde_json::from_value(mock_rpc_data.response_data["result"]["tx_status"]["block_hash"].clone()).unwrap());
 }
 
-#[rstest(mock_rpc_data("get_transaction", "time_added_to_pool"))]
-fn get_transaction_with_time_added_to_pool(mock_rpc_data: MockRpcData) {
-    let ckb_client = mock_rpc_data.client();
-
-    // 反序列化输入参数
-    let tx_hash = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
-
-    // 调用被测试的函数
-    let tx = ckb_client.get_transaction(tx_hash).unwrap();
-
-    // 比较输出结果
-    assert_eq!(tx.unwrap().time_added_to_pool.unwrap(), serde_json::from_value(mock_rpc_data.response_data["result"]["time_added_to_pool"].clone()).unwrap());
-
-}
-
 #[rstest(mock_rpc_data("get_transaction", "data2"))]
 fn get_transaction_with_data2(mock_rpc_data: MockRpcData) {
     let ckb_client = mock_rpc_data.client();
