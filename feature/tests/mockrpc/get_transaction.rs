@@ -48,6 +48,7 @@ fn get_transaction_with_tx_hash_verbosity_2_only_committed_true(mock_rpc_data: M
     let tx_hash = serde_json::from_value(mock_rpc_data.request_data["params"][0].clone()).unwrap();
     let tx = ckb_client.get_only_committed_transaction(tx_hash).unwrap();
     assert_eq!(tx.tx_status.block_hash, serde_json::from_value(mock_rpc_data.response_data["result"]["tx_status"]["block_hash"].clone()).unwrap());
+    assert_eq!(tx.tx_status.tx_index, serde_json::from_value(mock_rpc_data.response_data["result"]["tx_status"]["tx_index"].clone()).unwrap());
 }
 
 #[rstest(mock_rpc_data("get_transaction", "data2"))]

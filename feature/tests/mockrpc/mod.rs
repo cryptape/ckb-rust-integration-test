@@ -52,6 +52,8 @@ mod tx_pool_ready;
 mod verify_transaction_and_witness_proof;
 mod verify_transaction_proof;
 mod test_tx_pool_accept;
+mod clear_tx_verify_queue;
+mod send_test_transaction;
 
 use ckb_sdk::CkbRpcClient;
 use reqwest::blocking::Client;
