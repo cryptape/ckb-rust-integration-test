@@ -13,4 +13,6 @@ fn sync_state(mock_rpc_data: MockRpcData) {
     assert_eq!(state, serde_json::from_value(mock_rpc_data.response_data["result"].clone()).unwrap());
     assert!(state.assume_valid_target_reached);
     assert_eq!(serde_json::to_string(&state.assume_valid_target).unwrap(), mock_rpc_data.response_data["result"]["assume_valid_target"].to_string());
+    assert_eq!(serde_json::to_string(&state.unverified_tip_hash).unwrap(), mock_rpc_data.response_data["result"]["unverified_tip_hash"].to_string());
+    assert_eq!(serde_json::to_string(&state.unverified_tip_number).unwrap(), mock_rpc_data.response_data["result"]["unverified_tip_number"].to_string());
 }

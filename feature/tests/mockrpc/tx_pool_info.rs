@@ -10,4 +10,6 @@ fn tx_pool_info(mock_rpc_data: MockRpcData) {
 
     // 比较输出结果
     assert_eq!(info, serde_json::from_value(mock_rpc_data.response_data["result"].clone()).unwrap());
+    assert_eq!(info.verify_queue_size, serde_json::from_value(mock_rpc_data.response_data["result"]["verify_queue_size"].clone()).unwrap());
+
 }
