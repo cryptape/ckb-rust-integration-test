@@ -408,3 +408,314 @@ mod tests {
         Ok(())
     }
 }
+
+
+#[cfg(test)]
+mod omni_multisig_tests {
+    use super::*;
+    use ckb_jsonrpc_types as json_types;
+    use ckb_sdk::{
+        constants::{MultisigScript, SIGHASH_TYPE_HASH},
+        rpc::CkbRpcClient,
+        traits::{
+            DefaultCellCollector, DefaultCellDepResolver, DefaultHeaderDepResolver,
+            DefaultTransactionDependencyProvider, SecpCkbRawKeySigner,
+        },
+        tx_builder::{
+            balance_tx_capacity, fill_placeholder_witnesses, transfer::CapacityTransferBuilder,
+            unlock_tx, CapacityBalancer, TxBuilder,
+        },
+        types::NetworkType,
+        unlock::{
+            MultisigConfig, OmniLockConfig, OmniLockScriptSigner, OmniLockUnlocker, OmniUnlockMode,
+            ScriptUnlocker,
+        },
+        Address, HumanCapacity, ScriptGroup, ScriptId,
+    };
+    use ckb_types::{
+        bytes::Bytes,
+        core::{BlockView, ScriptHashType, TransactionView},
+        packed::{Byte32, CellDep, CellOutput, OutPoint, Script, Transaction, WitnessArgs},  // 移除 Transaction
+        prelude::*,
+        H160, H256,
+    };
+    use serde::{Deserialize, Serialize};
+    use std::{collections::HashMap, error::Error as StdErr, path::PathBuf};  // 移除 path::PathBuf
+    
+    struct OmniLockInfo {
+        type_hash: H256,
+        script_id: ScriptId,
+        cell_dep: CellDep,
+    }
+    
+    #[derive(Serialize, Deserialize)]
+    struct TxInfo {
+        tx: json_types::TransactionView,
+        omnilock_config: OmniLockConfig,
+    }
+    
+    // 构建多签配置
+    fn build_multisig_config(
+        sighash_address: &[Address],
+        require_first_n: u8,
+        threshold: u8,
+    ) -> Result<MultisigConfig, Box<dyn StdErr>> {
+        if sighash_address.is_empty() {
+            return Err("必须至少有一个 sighash_address".to_string().into());
+        }
+        let mut sighash_addresses = Vec::with_capacity(sighash_address.len());
+        for addr in sighash_address {
+            let lock_args = addr.payload().args();
+            if addr.payload().code_hash(None).as_slice() != SIGHASH_TYPE_HASH.as_bytes()
+                || addr.payload().hash_type() != ScriptHashType::Type
+                || lock_args.len() != 20
+            {
+                return Err(format!("sighash_address {} 不是有效的 sighash 地址", addr).into());
+            }
+            sighash_addresses.push(H160::from_slice(lock_args.as_ref()).unwrap());
+        }
+        Ok(MultisigConfig::new_with(
+            MultisigScript::V1,
+            sighash_addresses,
+            require_first_n,
+            threshold,
+        )?)
+    }
+    
+    // 构建 OmniLock cell dep
+    fn build_omnilock_cell_dep(
+        ckb_client: &CkbRpcClient,
+        tx_hash: &H256,  // 修改为引用类型
+        index: usize,
+    ) -> Result<OmniLockInfo, Box<dyn StdErr>> {
+        let out_point_json = ckb_jsonrpc_types::OutPoint {
+            tx_hash: tx_hash.clone(),  // 需要克隆，因为 json_types::OutPoint 需要拥有所有权
+            index: ckb_jsonrpc_types::Uint32::from(index as u32),
+        };
+        let cell_status = ckb_client.get_live_cell(out_point_json, false)?;
+        let cell = cell_status.cell.ok_or_else(|| format!("找不到交易 {} 的输出 {}", tx_hash, index))?;
+        let type_script = cell.output.type_.ok_or_else(|| format!("交易 {} 的输出 {} 没有类型脚本", tx_hash, index))?;
+        let script = Script::from(type_script);
+
+        let type_hash = script.calc_script_hash();
+        let out_point = OutPoint::new(Byte32::from_slice(tx_hash.as_bytes())?, index as u32);
+
+        let cell_dep = CellDep::new_builder().out_point(out_point).build();
+        Ok(OmniLockInfo {
+            type_hash: H256::from_slice(type_hash.as_slice())?,
+            script_id: ScriptId::new_type(type_hash.unpack()),
+            cell_dep,
+        })
+    }
+    
+    // 构建 OmniLock 解锁器
+    fn build_omnilock_unlockers(
+        keys: Vec<secp256k1::SecretKey>,
+        config: OmniLockConfig,
+        omni_lock_type_hash: H256,
+    ) -> HashMap<ScriptId, Box<dyn ScriptUnlocker>> {
+        let signer = SecpCkbRawKeySigner::new_with_secret_keys(keys);
+        let omnilock_signer =
+            OmniLockScriptSigner::new(Box::new(signer), config.clone(), OmniUnlockMode::Normal);
+        let omnilock_unlocker = OmniLockUnlocker::new(omnilock_signer, config);
+        let omnilock_script_id = ScriptId::new_type(omni_lock_type_hash);
+        HashMap::from([(
+            omnilock_script_id,
+            Box::new(omnilock_unlocker) as Box<dyn ScriptUnlocker>,
+        )])
+    }
+    
+    // 构建转账交易
+    fn build_transfer_tx(
+        omnilock_tx_hash: &H256,  // 修改为引用类型
+        omnilock_index: usize,
+        sighash_addresses: Vec<Address>,
+        require_first_n: u8,
+        threshold: u8,
+        receiver: Address,
+        capacity: HumanCapacity,
+        ckb_rpc: &str,
+    ) -> Result<(TransactionView, OmniLockConfig), Box<dyn StdErr>> {
+        let multisig_config =
+            build_multisig_config(&sighash_addresses, require_first_n, threshold)?;
+        let ckb_client = CkbRpcClient::new(ckb_rpc);
+        let cell = build_omnilock_cell_dep(&ckb_client, omnilock_tx_hash, omnilock_index)?;
+        let omnilock_config = OmniLockConfig::new_multisig(multisig_config);
+        
+        // 构建 CapacityBalancer
+        let sender = Script::new_builder()
+            .code_hash(cell.type_hash.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(omnilock_config.build_args().pack())
+            .build();
+        let placeholder_witness = omnilock_config.placeholder_witness(OmniUnlockMode::Normal)?;
+        let balancer = CapacityBalancer::new_simple(sender, placeholder_witness, 1000);
+
+        // 构建依赖解析器和收集器
+        let ckb_client = CkbRpcClient::new(ckb_rpc);
+        let genesis_block = ckb_client.get_block_by_number(0.into())?.unwrap();
+        let genesis_block = BlockView::from(genesis_block);
+        let mut cell_dep_resolver = DefaultCellDepResolver::from_genesis(&genesis_block)?;
+        cell_dep_resolver.insert(cell.script_id, cell.cell_dep, "Omni Lock".to_string());
+        let header_dep_resolver = DefaultHeaderDepResolver::new(ckb_rpc);
+        let mut cell_collector = DefaultCellCollector::new(ckb_rpc);
+        let tx_dep_provider = DefaultTransactionDependencyProvider::new(ckb_rpc, 10);
+
+        // 构建基础交易
+        let unlockers = build_omnilock_unlockers(Vec::new(), omnilock_config.clone(), cell.type_hash);
+        let output = CellOutput::new_builder()
+            .lock(Script::from(&receiver))
+            .capacity(capacity.0.pack())
+            .build();
+        let builder = CapacityTransferBuilder::new(vec![(output, Bytes::default())]);
+
+        let base_tx = builder.build_base(
+            &mut cell_collector,
+            &cell_dep_resolver,
+            &header_dep_resolver,
+            &tx_dep_provider,
+        )?;
+
+        let secp256k1_data_dep = {
+            let tx_hash = genesis_block.transactions()[0].hash();
+            let out_point = OutPoint::new(tx_hash, 3u32);
+            CellDep::new_builder().out_point(out_point).build()
+        };
+
+        let base_tx = base_tx
+            .as_advanced_builder()
+            .cell_dep(secp256k1_data_dep)
+            .build();
+        let (tx_filled_witnesses, _) =
+            fill_placeholder_witnesses(base_tx, &tx_dep_provider, &unlockers)?;
+
+        let tx = balance_tx_capacity(
+            &tx_filled_witnesses,
+            &balancer,
+            &mut cell_collector,
+            &tx_dep_provider,
+            &cell_dep_resolver,
+            &header_dep_resolver,
+        )?;
+        Ok((tx, omnilock_config))
+    }
+    
+    // 签名交易
+    fn sign_tx(
+        tx: TransactionView,
+        omnilock_config: &OmniLockConfig,
+        keys: Vec<secp256k1::SecretKey>,
+        omnilock_tx_hash: &H256,  // 修改为引用类型
+        omnilock_index: usize,
+        ckb_rpc: &str,
+    ) -> Result<(TransactionView, Vec<ScriptGroup>), Box<dyn StdErr>> {
+        // 解锁交易
+        let tx_dep_provider = DefaultTransactionDependencyProvider::new(ckb_rpc, 10);
+        let ckb_client = CkbRpcClient::new(ckb_rpc);
+        let cell = build_omnilock_cell_dep(&ckb_client, omnilock_tx_hash, omnilock_index)?;
+
+        let unlockers = build_omnilock_unlockers(keys, omnilock_config.clone(), cell.type_hash);
+        let (new_tx, new_still_locked_groups) = unlock_tx(tx.clone(), &tx_dep_provider, &unlockers)?;
+        
+        Ok((new_tx, new_still_locked_groups))
+    }
+    
+    // 3.1 OmniLock 结合多签基本测试
+    #[test]
+    #[ignore]
+    fn test_omnilock_with_multisig() -> Result<(), Box<dyn StdErr>> {
+        let omnilock_tx_hash = H256::from_str("9154df4f7336402114d04495175b37390ce86a4906d2d4001cf02c3e6d97f39c")
+        .map_err(|e| format!("无效的交易哈希: {}", e))?;
+        let omnilock_index = 0;
+        let require_first_n = 0;
+        let threshold = 2;
+        // 使用公共测试网节点
+        let ckb_rpc = "https://testnet.ckb.dev";
+        
+        // 创建测试地址
+        let sighash_address1 = Address::from_str("ckt1qyqt8xpk328d89zgl928nsgh3lelch33vvvq5u3024").unwrap();
+        let sighash_address2 = Address::from_str("ckt1qyqvsv5240xeh85wvnau2eky8pwrhh4jr8ts8vyj37").unwrap();
+        let sighash_address3 = Address::from_str("ckt1qyqywrwdchjyqeysjegpzw38fvandtktdhrs0zaxl4").unwrap();
+        let sighash_addresses = vec![sighash_address1, sighash_address2, sighash_address3];
+        
+        // 接收地址
+        let receiver = Address::from_str("ckt1qyqy68e02pll7qd9m603pqkdr29vw396h6dq50reug").unwrap();
+        
+        // 转账金额
+        let capacity = HumanCapacity::from_str("61.0").unwrap();
+        
+        // 构建交易
+        let (tx, omnilock_config) = build_transfer_tx(
+            &omnilock_tx_hash,  // 传递引用
+            omnilock_index,
+            sighash_addresses,
+            require_first_n,
+            threshold,
+            receiver,
+            capacity,
+            ckb_rpc,
+        )?;
+        
+        // 准备签名密钥
+        let key1 = H256::from_str("8dadf1939b89919ca74b58fef41c0d4ec70cd6a7b093a0c8ca5b268f93b8181f").unwrap();
+        let key2 = H256::from_str("d00c06bfd800d27397002dca6fb0993d5ba6399b4238b2f29ee9deb97593d2bc").unwrap();
+        
+        let secret_key1 = secp256k1::SecretKey::from_slice(key1.as_bytes())
+            .map_err(|err| format!("无效的私钥1: {}", err))?;
+        let secret_key2 = secp256k1::SecretKey::from_slice(key2.as_bytes())
+            .map_err(|err| format!("无效的私钥2: {}", err))?;
+        
+        // 签名交易
+        let keys = vec![secret_key1, secret_key2];
+        let (signed_tx, still_locked_groups) = sign_tx(
+            tx,
+            &omnilock_config,
+            keys,
+            &omnilock_tx_hash,  // 传递引用
+            omnilock_index,
+            ckb_rpc,
+        )?;
+        
+        // 验证交易是否成功签名
+        assert!(still_locked_groups.is_empty(), "交易未完全解锁");
+        
+        // 验证交易结构
+        assert!(signed_tx.inputs().len() > 0, "交易没有输入");
+        assert!(signed_tx.outputs().len() > 0, "交易没有输出");
+        
+        // 验证第一个见证是否已被正确填充（不再是占位符）
+        let witness_args = WitnessArgs::from_slice(signed_tx.witnesses().get(0).unwrap().raw_data().as_ref())?;
+        let lock_field = witness_args.lock().to_opt().unwrap().raw_data();
+        assert_ne!(
+            lock_field,
+            omnilock_config.zero_lock(OmniUnlockMode::Normal)?,
+            "交易未被正确签名"
+        );
+        
+        println!("OmniLock 结合多签测试成功！");
+        Ok(())
+    }
+    
+    #[test]
+    fn test_omnilock_with_multisig_simple() -> Result<(), Box<dyn StdErr>> {
+        // 创建测试地址
+        let sighash_address1 = Address::from_str("ckt1qyqt8xpk328d89zgl928nsgh3lelch33vvvq5u3024").unwrap();
+        let sighash_address2 = Address::from_str("ckt1qyqvsv5240xeh85wvnau2eky8pwrhh4jr8ts8vyj37").unwrap();
+        let sighash_address3 = Address::from_str("ckt1qyqywrwdchjyqeysjegpzw38fvandtktdhrs0zaxl4").unwrap();
+        let sighash_addresses = vec![sighash_address1, sighash_address2, sighash_address3];
+        
+        // 构建多签配置
+        let multisig_config = build_multisig_config(&sighash_addresses, 0, 2)?;
+        
+        // 创建 OmniLock 配置
+        let omnilock_config = OmniLockConfig::new_multisig(multisig_config.clone());
+        
+        // 直接验证原始多签配置
+        assert_eq!(multisig_config.threshold(), 2);
+        assert_eq!(multisig_config.require_first_n(), 0);
+        assert_eq!(multisig_config.sighash_addresses().len(), 3);
+        
+        println!("OmniLock 结合多签配置测试成功！");
+        Ok(())
+    }
+}
