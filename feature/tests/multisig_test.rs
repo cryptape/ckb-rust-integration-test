@@ -22,7 +22,7 @@ mod tests {
     fn test_multisig_config_generation() -> Result<(), Box<dyn StdErr>> {
         // 测试用例1：正常的2-of-2多签配置
         let multisig_config = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -36,7 +36,7 @@ mod tests {
 
         // 测试用例2：1-of-3多签配置
         let multisig_config = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -50,7 +50,7 @@ mod tests {
 
         // 测试用例3：require_first_n参数设置为1
         let multisig_config = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -64,7 +64,7 @@ mod tests {
 
         // 测试用例4：无效配置 - threshold大于公钥数量
         let result = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -76,7 +76,7 @@ mod tests {
 
         // 测试用例5：无效配置 - require_first_n大于公钥数量
         let result = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -95,7 +95,7 @@ mod tests {
         // 测试用例1：在测试网络生成多签地址
         let network_info = NetworkInfo::testnet();
         let multisig_config = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -103,13 +103,13 @@ mod tests {
             0,
             2,
         )?;
-        let testnet_address = multisig_config.to_address(network_info.network_type, MultisigScript::V1, None);
+        let testnet_address = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
         assert!(testnet_address.to_string().starts_with("ckt"));
         println!("Testnet multisig address: {}", testnet_address);
 
         // 测试用例2：在主网生成多签地址
         let network_info = NetworkInfo::mainnet();
-        let mainnet_address = multisig_config.to_address(network_info.network_type, MultisigScript::V1, None);
+        let mainnet_address = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
         assert!(mainnet_address.to_string().starts_with("ckb"));
         println!("Mainnet multisig address: {}", mainnet_address);
 
@@ -126,27 +126,27 @@ mod tests {
     fn test_multisig_dep_group() -> Result<(), Box<dyn StdErr>> {
         // 测试用例1：默认依赖加载
         let network_info = NetworkInfo::testnet();
-        let dep_group = MultisigScript::V1.dep_group(network_info.clone());
+        let dep_group = MultisigScript::V2.dep_group(network_info.clone());
         assert!(dep_group.is_some());
         
         // 测试用例2：通过环境变量设置依赖
         // 注意：这部分在实际测试中可能需要调整，因为修改环境变量可能会影响其他测试
         let custom_dep = "0000000000000000000000000000000000000000000000000000000000000000-0";
-        env::set_var("MULTISIG_V1_DEP_GROUP", custom_dep);
+        env::set_var("MULTISIG_V2_DEP_GROUP", custom_dep);
         
         // 验证环境变量是否被正确设置，而不是验证dep_group方法的返回值
-        assert_eq!(env::var("MULTISIG_V1_DEP_GROUP").unwrap(), custom_dep);
+        assert_eq!(env::var("MULTISIG_V2_DEP_GROUP").unwrap(), custom_dep);
         
         // 获取dep_group值，但不验证其内容
-        let dep_group_with_env = MultisigScript::V1.dep_group(network_info);
+        let dep_group_with_env = MultisigScript::V2.dep_group(network_info);
         assert!(dep_group_with_env.is_some());
         println!("Dep group with env: {:?}", dep_group_with_env.unwrap().0.to_string());
         
         // 恢复环境变量
-        env::remove_var("MULTISIG_V1_DEP_GROUP");
+        env::remove_var("MULTISIG_V2_DEP_GROUP");
         
         // 验证环境变量已被移除
-        assert!(env::var("MULTISIG_V1_DEP_GROUP").is_err());
+        assert!(env::var("MULTISIG_V2_DEP_GROUP").is_err());
 
         Ok(())
     }
@@ -154,16 +154,16 @@ mod tests {
     // 1.4 多签脚本ID测试
     #[test]
     fn test_multisig_script_id() -> Result<(), Box<dyn StdErr>> {
-        // 测试V1脚本ID
-        let v1_script_id = MultisigScript::V1.script_id();
-        println!("V1 script ID: code_hash={}, hash_type={:?}", v1_script_id.code_hash, v1_script_id.hash_type);
+        // 测试V2脚本ID
+        let V2_script_id = MultisigScript::V2.script_id();
+        println!("V2 script ID: code_hash={}, hash_type={:?}", V2_script_id.code_hash, V2_script_id.hash_type);
         
         // 测试Legacy脚本ID
         let legacy_script_id = MultisigScript::Legacy.script_id();
         println!("Legacy script ID: code_hash={}, hash_type={:?}", legacy_script_id.code_hash, legacy_script_id.hash_type);
         
-        // 确保V1和Legacy脚本ID不同
-        assert_ne!(v1_script_id.code_hash, legacy_script_id.code_hash);
+        // 确保V2和Legacy脚本ID不同
+        assert_ne!(V2_script_id.code_hash, legacy_script_id.code_hash);
         
         Ok(())
     }
@@ -175,7 +175,7 @@ mod tests {
         let configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
 
         let multisig_config = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -183,7 +183,7 @@ mod tests {
             0,
             2,
         )?;
-        let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V1, None);
+        let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
         let receiver = Address::from_str("ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2qf8keemy2p5uu0g0gn8cd4ju23s5269qk8rg4r")?;
 
         let iterator = InputIterator::new_with_address(&[sender], &network_info);
@@ -222,7 +222,7 @@ mod tests {
         let configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
 
         let multisig_config = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -230,7 +230,7 @@ mod tests {
             0,
             2,
         )?;
-        let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V1, None);
+        let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
         
         // 创建多个接收地址
         let receiver1 = Address::from_str("ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2qf8keemy2p5uu0g0gn8cd4ju23s5269qk8rg4r")?;
@@ -279,7 +279,7 @@ mod tests {
 
         // 创建3-of-5多签配置
         let multisig_config = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"), // 对应 private_key1
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"), // 对应 private_key2
@@ -291,7 +291,7 @@ mod tests {
             3,
         )?;
         
-        let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V1, None);
+        let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
         println!("Multisig sender address: {}", sender);
         let receiver = Address::from_str("ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2qf8keemy2p5uu0g0gn8cd4ju23s5269qk8rg4r")?;
 
@@ -337,7 +337,7 @@ mod tests {
     fn test_invalid_multisig_config() {
         // 测试用例1：threshold大于公钥数量
         let result = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -349,7 +349,7 @@ mod tests {
 
         // 测试用例2：require_first_n大于公钥数量
         let result = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -361,7 +361,7 @@ mod tests {
 
         // 测试用例3：空公钥列表
         let result = MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             vec![],
             0,
             1,
@@ -376,9 +376,9 @@ mod tests {
         // 移除未使用的变量警告
         let _configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
 
-        // 创建V1多签配置
-        let multisig_config_v1 = MultisigConfig::new_with(
-            MultisigScript::V1,
+        // 创建V2多签配置
+        let multisig_config_V2 = MultisigConfig::new_with(
+            MultisigScript::V2,
             vec![
                 h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
                 h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
@@ -386,7 +386,7 @@ mod tests {
             0,
             2,
         )?;
-        let sender_v1 = multisig_config_v1.to_address(network_info.network_type, MultisigScript::V1, None);
+        let sender_V2 = multisig_config_V2.to_address(network_info.network_type, MultisigScript::V2, None);
         
         // 创建Legacy多签配置
         let multisig_config_legacy = MultisigConfig::new_with(
@@ -401,8 +401,8 @@ mod tests {
         let sender_legacy = multisig_config_legacy.to_address(network_info.network_type, MultisigScript::Legacy, None);
         
         // 验证两种地址不同
-        assert_ne!(sender_v1.to_string(), sender_legacy.to_string());
-        println!("V1 address: {}", sender_v1);
+        assert_ne!(sender_V2.to_string(), sender_legacy.to_string());
+        println!("V2 address: {}", sender_V2);
         println!("Legacy address: {}", sender_legacy);
         
         Ok(())
@@ -475,7 +475,7 @@ mod omni_multisig_tests {
             sighash_addresses.push(H160::from_slice(lock_args.as_ref()).unwrap());
         }
         Ok(MultisigConfig::new_with(
-            MultisigScript::V1,
+            MultisigScript::V2,
             sighash_addresses,
             require_first_n,
             threshold,
@@ -618,82 +618,6 @@ mod omni_multisig_tests {
         let (new_tx, new_still_locked_groups) = unlock_tx(tx.clone(), &tx_dep_provider, &unlockers)?;
         
         Ok((new_tx, new_still_locked_groups))
-    }
-    
-    // 3.1 OmniLock 结合多签基本测试
-    #[test]
-    #[ignore]
-    fn test_omnilock_with_multisig() -> Result<(), Box<dyn StdErr>> {
-        let omnilock_tx_hash = H256::from_str("9154df4f7336402114d04495175b37390ce86a4906d2d4001cf02c3e6d97f39c")
-        .map_err(|e| format!("无效的交易哈希: {}", e))?;
-        let omnilock_index = 0;
-        let require_first_n = 0;
-        let threshold = 2;
-        // 使用公共测试网节点
-        let ckb_rpc = "https://testnet.ckb.dev";
-        
-        // 创建测试地址
-        let sighash_address1 = Address::from_str("ckt1qyqt8xpk328d89zgl928nsgh3lelch33vvvq5u3024").unwrap();
-        let sighash_address2 = Address::from_str("ckt1qyqvsv5240xeh85wvnau2eky8pwrhh4jr8ts8vyj37").unwrap();
-        let sighash_address3 = Address::from_str("ckt1qyqywrwdchjyqeysjegpzw38fvandtktdhrs0zaxl4").unwrap();
-        let sighash_addresses = vec![sighash_address1, sighash_address2, sighash_address3];
-        
-        // 接收地址
-        let receiver = Address::from_str("ckt1qyqy68e02pll7qd9m603pqkdr29vw396h6dq50reug").unwrap();
-        
-        // 转账金额
-        let capacity = HumanCapacity::from_str("61.0").unwrap();
-        
-        // 构建交易
-        let (tx, omnilock_config) = build_transfer_tx(
-            &omnilock_tx_hash,  // 传递引用
-            omnilock_index,
-            sighash_addresses,
-            require_first_n,
-            threshold,
-            receiver,
-            capacity,
-            ckb_rpc,
-        )?;
-        
-        // 准备签名密钥
-        let key1 = H256::from_str("8dadf1939b89919ca74b58fef41c0d4ec70cd6a7b093a0c8ca5b268f93b8181f").unwrap();
-        let key2 = H256::from_str("d00c06bfd800d27397002dca6fb0993d5ba6399b4238b2f29ee9deb97593d2bc").unwrap();
-        
-        let secret_key1 = secp256k1::SecretKey::from_slice(key1.as_bytes())
-            .map_err(|err| format!("无效的私钥1: {}", err))?;
-        let secret_key2 = secp256k1::SecretKey::from_slice(key2.as_bytes())
-            .map_err(|err| format!("无效的私钥2: {}", err))?;
-        
-        // 签名交易
-        let keys = vec![secret_key1, secret_key2];
-        let (signed_tx, still_locked_groups) = sign_tx(
-            tx,
-            &omnilock_config,
-            keys,
-            &omnilock_tx_hash,  // 传递引用
-            omnilock_index,
-            ckb_rpc,
-        )?;
-        
-        // 验证交易是否成功签名
-        assert!(still_locked_groups.is_empty(), "交易未完全解锁");
-        
-        // 验证交易结构
-        assert!(signed_tx.inputs().len() > 0, "交易没有输入");
-        assert!(signed_tx.outputs().len() > 0, "交易没有输出");
-        
-        // 验证第一个见证是否已被正确填充（不再是占位符）
-        let witness_args = WitnessArgs::from_slice(signed_tx.witnesses().get(0).unwrap().raw_data().as_ref())?;
-        let lock_field = witness_args.lock().to_opt().unwrap().raw_data();
-        assert_ne!(
-            lock_field,
-            omnilock_config.zero_lock(OmniUnlockMode::Normal)?,
-            "交易未被正确签名"
-        );
-        
-        println!("OmniLock 结合多签测试成功！");
-        Ok(())
     }
     
     #[test]

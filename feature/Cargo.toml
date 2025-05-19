@@ -61,4 +61,4 @@ test = []
 clap = { version = "4.5", features = ["derive"] }
 httpmock = "0.6"
 tempfile = "3.19.1"
-ckb-sdk = { git = "https://github.com/eval-exec/ckb-sdk-rust", branch = "exec/upgrade-multisig" }
+ckb-sdk = { git = "https://github.com/eval-exec/ckb-sdk-rust",  rev = "fa01ccd79871b7a1fddecba8c0ba71064abcbeba" }
