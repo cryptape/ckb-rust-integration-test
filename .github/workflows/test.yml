@@ -20,8 +20,7 @@ jobs:
         sh prepare.sh
         cd feature
         rustup toolchain install nightly
-        cargo +nightly test -- --format=json -Z unstable-options --report-time > test-report.json
-        
+        cargo +nightly test -- --nocapture --format=json -Z unstable-options --report-time > test-report.json
     - name: json to report md
       if: failure()
       run: |
