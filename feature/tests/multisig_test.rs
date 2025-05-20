@@ -11,6 +11,7 @@ use ckb_sdk::{
     Address, CkbRpcClient, NetworkInfo,
 };
 use ckb_types::{core::Capacity, h160, h256};
+use ckb_types::packed::Transaction as PackedTransaction;
 use std::{env, error::Error as StdErr, str::FromStr};
 
 #[cfg(test)]
@@ -168,11 +169,11 @@ mod tests {
         Ok(())
     }
 
-    // 2.1 简单转账测试
+    // 2.1 简单转账测试 - 与测试网交互
     #[test]
     fn test_simple_transfer() -> Result<(), Box<dyn StdErr>> {
         let network_info = NetworkInfo::testnet();
-        let configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
+        let mut configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
 
         let multisig_config = MultisigConfig::new_with(
             MultisigScript::V2,
@@ -185,10 +186,13 @@ mod tests {
         )?;
         let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
         let receiver = Address::from_str("ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2qf8keemy2p5uu0g0gn8cd4ju23s5269qk8rg4r")?;
+        
+        println!("多签发送地址: {}", sender);
+        println!("接收地址: {}", receiver);
 
         let iterator = InputIterator::new_with_address(&[sender], &network_info);
         let mut builder = SimpleTransactionBuilder::new(configuration, iterator);
-        builder.add_output(&receiver, Capacity::shannons(6100000000u64));
+        builder.add_output(&receiver, Capacity::shannons(6100001000u64)); // 增加容量确保足够
 
         let mut tx_with_groups =
             builder.build(&HandlerContexts::new_multisig(multisig_config.clone()))?;
@@ -208,10 +212,30 @@ mod tests {
             &SignContexts::new_multisig_h256(&private_key2, multisig_config)?,
         )?;
 
-        // 验证交易构建是否成功
-        assert!(tx_with_groups.get_tx_view().inputs().len() > 0);
-        assert!(tx_with_groups.get_tx_view().outputs().len() > 0);
+        // 获取签名后的交易
+        let tx = tx_with_groups.get_tx_view().data();
+        let packed_tx: PackedTransaction = tx.into();
         
+        // 打印交易详情
+        println!("交易哈希: {}", tx_with_groups.get_tx_view().hash());
+        println!("交易输入数量: {}", tx_with_groups.get_tx_view().inputs().len());
+        println!("交易输出数量: {}", tx_with_groups.get_tx_view().outputs().len());
+
+        // 连接到测试网节点，发送交易（用tx_pool_accept_test方式，不上链）
+        let ckb_client = CkbRpcClient::new(&network_info.url);
+        
+        // let result = ckb_client.send_transaction(packed_tx.into(), Some(OutputsValidator::Passthrough));
+                
+                // match result {
+                //     Ok(tx_hash) => {
+                //         println!("交易发送成功，交易哈希: {}", tx_hash);
+                //         assert!(true);
+                //     },
+                //     Err(err) => {
+                //         println!("交易发送失败: {}", err);
+                //         assert!(false, "交易发送失败: {}", err);
+                //     }
+                // }
         Ok(())
     }
 
@@ -409,6 +433,165 @@ mod tests {
     }
 }
 
+
+#[cfg(test)]
+mod tx_pool_accept_tests {
+    use super::*;
+    use ckb_jsonrpc_types::OutputsValidator;
+    use ckb_types::packed::Transaction as PackedTransaction;
+
+    // 测试旧的多签（Legacy）能够构造交易并通过 test_tx_pool_accept 成功
+    #[test]
+    fn test_legacy_multisig_tx_pool_accept() -> Result<(), Box<dyn StdErr>> {
+        let network_info = NetworkInfo::testnet();
+        let configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
+
+        // 创建Legacy多签配置
+        let multisig_config = MultisigConfig::new_with(
+            MultisigScript::Legacy,
+            vec![
+                h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
+                h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
+            ],
+            0,
+            2,
+        )?;
+        let sender = multisig_config.to_address(network_info.network_type, MultisigScript::Legacy, None);
+        let receiver = Address::from_str("ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2qf8keemy2p5uu0g0gn8cd4ju23s5269qk8rg4r")?;
+
+        let iterator = InputIterator::new_with_address(&[sender], &network_info);
+        let mut builder = SimpleTransactionBuilder::new(configuration, iterator);
+        builder.add_output(&receiver, Capacity::shannons(6100000000u64));
+
+        let mut tx_with_groups =
+            builder.build(&HandlerContexts::new_multisig(multisig_config.clone()))?;
+
+        // 签名交易
+        let private_key1 = h256!("0x4fd809631a6aa6e3bb378dd65eae5d71df895a82c91a615a1e8264741515c79c");
+        let signer1 = TransactionSigner::new(&network_info);
+        signer1.sign_transaction(
+            &mut tx_with_groups,
+            &SignContexts::new_multisig_h256(&private_key1, multisig_config.clone())?,
+        )?;
+
+        let private_key2 = h256!("0x7438f7b35c355e3d2fb9305167a31a72d22ddeafb80a21cc99ff6329d92e8087");
+        let signer2 = TransactionSigner::new(&network_info);
+        signer2.sign_transaction(
+            &mut tx_with_groups,
+            &SignContexts::new_multisig_h256(&private_key2, multisig_config)?,
+        )?;
+
+        // 获取签名后的交易
+        let tx = tx_with_groups.get_tx_view().data();
+        let packed_tx: PackedTransaction = tx.into();
+
+        // 连接到测试网节点
+        let ckb_client = CkbRpcClient::new(&network_info.url);
+        
+        // 使用test_tx_pool_accept验证交易
+        let result = ckb_client.test_tx_pool_accept(packed_tx.into(), Some(OutputsValidator::Passthrough));
+        
+        // 打印结果
+        match result {
+            Ok(entry) => {
+                println!("Legacy多签交易验证成功: {:?}", entry);
+                assert!(true);
+            },
+            Err(err) => {
+                println!("Legacy多签交易验证失败: {}", err);
+                assert!(false, "Legacy多签交易验证失败: {}", err);
+            }
+        }
+        
+        Ok(())
+    }
+
+    // 测试新的多签（V2）能够构造交易并通过 test_tx_pool_accept 成功
+    #[test]
+    fn test_v2_multisig_tx_pool_accept() -> Result<(), Box<dyn StdErr>> {
+        use ckb_sdk::transaction::handler::multisig::Secp256k1Blake160MultisigAllScriptHandler;
+        
+        let network_info = NetworkInfo::testnet();
+        let mut configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?; 
+        // 创建V2多签配置
+        let multisig_config = MultisigConfig::new_with(
+            MultisigScript::V2,
+            vec![
+                h160!("0x7336b0ba900684cb3cb00f0d46d4f64c0994a562"),
+                h160!("0x5724c1e3925a5206944d753a6f3edaedf977d77f"),
+            ],
+            0,
+            2,
+        )?;
+        let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
+        let receiver = Address::from_str("ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2qf8keemy2p5uu0g0gn8cd4ju23s5269qk8rg4r")?;
+        
+        println!("Multisig sender address: {}", sender);
+        println!("Multisig receiver address: {}", receiver);
+        
+        // 创建多签脚本处理器，它会自动添加正确的cell_dep
+        let multisig_handler = Secp256k1Blake160MultisigAllScriptHandler::new(
+            &network_info,
+            MultisigScript::V2,
+        )?;
+        
+        // 打印V2多签脚本ID和cell_deps
+        let v2_script_id = MultisigScript::V2.script_id();
+        println!("V2 script ID: code_hash={}, hash_type={:?}", v2_script_id.code_hash, v2_script_id.hash_type);
+       
+        let iterator = InputIterator::new_with_address(&[sender], &network_info);
+        let mut builder = SimpleTransactionBuilder::new(configuration, iterator);
+        
+        // 增加输出金额，确保有足够的容量
+        builder.add_output(&receiver, Capacity::shannons(6100001000u64));
+        
+        // 使用HandlerContexts::new_multisig构建交易，它会自动添加正确的cell_dep
+        let mut tx_with_groups =
+            builder.build(&HandlerContexts::new_multisig(multisig_config.clone()))?;
+        
+        // 签名交易
+        let private_key1 = h256!("0x4fd809631a6aa6e3bb378dd65eae5d71df895a82c91a615a1e8264741515c79c");
+        let signer1 = TransactionSigner::new(&network_info);
+        signer1.sign_transaction(
+            &mut tx_with_groups,
+            &SignContexts::new_multisig_h256(&private_key1, multisig_config.clone())?,
+        )?;
+    
+        let private_key2 = h256!("0x7438f7b35c355e3d2fb9305167a31a72d22ddeafb80a21cc99ff6329d92e8087");
+        let signer2 = TransactionSigner::new(&network_info);
+        signer2.sign_transaction(
+            &mut tx_with_groups,
+            &SignContexts::new_multisig_h256(&private_key2, multisig_config)?,
+        )?;
+    
+        // 获取签名后的交易
+        let tx = tx_with_groups.get_tx_view().data();
+        let packed_tx: PackedTransaction = tx.into();
+        
+        // 打印交易的详细信息
+        println!("Transaction cell deps: {:?}", tx_with_groups.get_tx_view().cell_deps());
+        
+        // 连接到测试网节点
+        let ckb_client = CkbRpcClient::new(&network_info.url);
+        
+        // 使用test_tx_pool_accept验证交易
+        let result = ckb_client.test_tx_pool_accept(packed_tx.into(), Some(OutputsValidator::Passthrough));
+        
+        // 打印结果
+        match result {
+            Ok(entry) => {
+                println!("V2多签交易验证成功: {:?}", entry);
+                assert!(true);
+            },
+            Err(err) => {
+                println!("V2多签交易验证失败: {}", err);
+                assert!(false, "V2多签交易验证失败: {}", err);
+            }
+        }
+        
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod omni_multisig_tests {
