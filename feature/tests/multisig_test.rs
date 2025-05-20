@@ -485,6 +485,8 @@ mod tx_pool_accept_tests {
     // 测试新的多签（V2）能够构造交易并通过 test_tx_pool_accept 成功
     #[test]
     fn test_v2_multisig_tx_pool_accept() -> Result<(), Box<dyn StdErr>> {
+        use ckb_sdk::transaction::handler::multisig::Secp256k1Blake160MultisigAllScriptHandler;
+        
         let network_info = NetworkInfo::testnet();
         let mut configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
         
@@ -503,17 +505,30 @@ mod tx_pool_accept_tests {
         )?;
         let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
         let receiver = Address::from_str("ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2qf8keemy2p5uu0g0gn8cd4ju23s5269qk8rg4r")?;
+        
         println!("Multisig sender address: {}", sender);
         println!("Multisig receiver address: {}", receiver);
-    
+        
+        // 创建多签脚本处理器，它会自动添加正确的cell_dep
+        let multisig_handler = Secp256k1Blake160MultisigAllScriptHandler::new(
+            &network_info,
+            MultisigScript::V2,
+        )?;
+        
+        // 打印V2多签脚本ID和cell_deps
+        let v2_script_id = MultisigScript::V2.script_id();
+        println!("V2 script ID: code_hash={}, hash_type={:?}", v2_script_id.code_hash, v2_script_id.hash_type);
+       
         let iterator = InputIterator::new_with_address(&[sender], &network_info);
         let mut builder = SimpleTransactionBuilder::new(configuration, iterator);
-        // 减少输出金额，增加手续费
-        builder.add_output(&receiver, Capacity::shannons(6100001000u64)); // 减少1000 shannons作为额外手续费
-    
+        
+        // 增加输出金额，确保有足够的容量
+        builder.add_output(&receiver, Capacity::shannons(6100001000u64));
+        
+        // 使用HandlerContexts::new_multisig构建交易，它会自动添加正确的cell_dep
         let mut tx_with_groups =
             builder.build(&HandlerContexts::new_multisig(multisig_config.clone()))?;
-    
+        
         // 签名交易
         let private_key1 = h256!("0x4fd809631a6aa6e3bb378dd65eae5d71df895a82c91a615a1e8264741515c79c");
         let signer1 = TransactionSigner::new(&network_info);
@@ -533,10 +548,9 @@ mod tx_pool_accept_tests {
         let tx = tx_with_groups.get_tx_view().data();
         let packed_tx: PackedTransaction = tx.into();
         
-        // 打印V2多签脚本ID
-        let v2_script_id = MultisigScript::V2.script_id();
-        println!("V2 script ID: code_hash={}, hash_type={:?}", v2_script_id.code_hash, v2_script_id.hash_type);
-
+        // 打印交易的详细信息
+        println!("Transaction cell deps: {:?}", tx_with_groups.get_tx_view().cell_deps());
+        
         // 连接到测试网节点
         let ckb_client = CkbRpcClient::new(&network_info.url);
         
