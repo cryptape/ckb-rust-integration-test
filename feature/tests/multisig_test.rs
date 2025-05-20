@@ -11,7 +11,6 @@ use ckb_sdk::{
     Address, CkbRpcClient, NetworkInfo,
 };
 use ckb_types::{core::Capacity, h160, h256};
-use ckb_jsonrpc_types::OutputsValidator;
 use ckb_types::packed::Transaction as PackedTransaction;
 use std::{env, error::Error as StdErr, str::FromStr};
 
@@ -175,9 +174,6 @@ mod tests {
     fn test_simple_transfer() -> Result<(), Box<dyn StdErr>> {
         let network_info = NetworkInfo::testnet();
         let mut configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
-        
-        // 增加手续费率，确保交易能够被接受
-        configuration.fee_rate = 1000;
 
         let multisig_config = MultisigConfig::new_with(
             MultisigScript::V2,
@@ -516,11 +512,7 @@ mod tx_pool_accept_tests {
         use ckb_sdk::transaction::handler::multisig::Secp256k1Blake160MultisigAllScriptHandler;
         
         let network_info = NetworkInfo::testnet();
-        let mut configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
-        
-        // 增加手续费率，确保交易能够被接受
-        configuration.fee_rate = 1000;
-        
+        let mut configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?; 
         // 创建V2多签配置
         let multisig_config = MultisigConfig::new_with(
             MultisigScript::V2,
