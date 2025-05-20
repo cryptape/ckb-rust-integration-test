@@ -1,18 +1,3 @@
-mod fetch_header;
-mod fetch_transaction;
-mod get_cells;
-mod get_cells_capacity;
-mod get_genesis_block;
-mod get_header;
-mod get_peers;
-mod get_scripts;
-mod get_tip_header;
-mod get_transaction;
-mod get_transactions;
-mod local_node_info;
-mod send_transaction;
-mod set_scripts;
-
 use ckb_sdk::rpc::LightClientRpcClient;
 // use ckb_sdk::LightClientRpcClient;
 use reqwest::blocking::Client;
@@ -86,8 +71,8 @@ impl MockRpcData {
 
 #[fixture]
 pub fn mock_rpc_data(
-    #[default = "Alice"] name: impl AsRef<str>,
-    #[default = "params"] params: impl AsRef<str>,
+    #[default("Alice")] name: impl AsRef<str>,
+    #[default("params")] params: impl AsRef<str>,
 ) -> MockRpcData {
     return MockRpcData::new(name.as_ref().to_owned(), params.as_ref().to_owned());
 }

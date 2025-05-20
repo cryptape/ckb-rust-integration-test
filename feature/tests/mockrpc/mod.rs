@@ -127,8 +127,8 @@ impl MockRpcData {
 
 #[fixture]
 pub fn mock_rpc_data(
-    #[default = "Alice"] name: impl AsRef<str>,
-    #[default = "params"] params: impl AsRef<str>,
+    #[default("Alice")] name: impl AsRef<str>,
+    #[default("params")] params: impl AsRef<str>,
 ) -> MockRpcData {
     return MockRpcData::new(name.as_ref().to_owned(), params.as_ref().to_owned());
 }
