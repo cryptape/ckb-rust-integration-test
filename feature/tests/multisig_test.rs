@@ -11,6 +11,8 @@ use ckb_sdk::{
     Address, CkbRpcClient, NetworkInfo,
 };
 use ckb_types::{core::Capacity, h160, h256};
+use ckb_jsonrpc_types::OutputsValidator;
+use ckb_types::packed::Transaction as PackedTransaction;
 use std::{env, error::Error as StdErr, str::FromStr};
 
 #[cfg(test)]
@@ -168,11 +170,14 @@ mod tests {
         Ok(())
     }
 
-    // 2.1 简单转账测试
+    // 2.1 简单转账测试 - 与测试网交互
     #[test]
     fn test_simple_transfer() -> Result<(), Box<dyn StdErr>> {
         let network_info = NetworkInfo::testnet();
-        let configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
+        let mut configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
+        
+        // 增加手续费率，确保交易能够被接受
+        configuration.fee_rate = 1000;
 
         let multisig_config = MultisigConfig::new_with(
             MultisigScript::V2,
@@ -185,10 +190,13 @@ mod tests {
         )?;
         let sender = multisig_config.to_address(network_info.network_type, MultisigScript::V2, None);
         let receiver = Address::from_str("ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2qf8keemy2p5uu0g0gn8cd4ju23s5269qk8rg4r")?;
+        
+        println!("多签发送地址: {}", sender);
+        println!("接收地址: {}", receiver);
 
         let iterator = InputIterator::new_with_address(&[sender], &network_info);
         let mut builder = SimpleTransactionBuilder::new(configuration, iterator);
-        builder.add_output(&receiver, Capacity::shannons(6100000000u64));
+        builder.add_output(&receiver, Capacity::shannons(6100001000u64)); // 增加容量确保足够
 
         let mut tx_with_groups =
             builder.build(&HandlerContexts::new_multisig(multisig_config.clone()))?;
@@ -208,10 +216,30 @@ mod tests {
             &SignContexts::new_multisig_h256(&private_key2, multisig_config)?,
         )?;
 
-        // 验证交易构建是否成功
-        assert!(tx_with_groups.get_tx_view().inputs().len() > 0);
-        assert!(tx_with_groups.get_tx_view().outputs().len() > 0);
+        // 获取签名后的交易
+        let tx = tx_with_groups.get_tx_view().data();
+        let packed_tx: PackedTransaction = tx.into();
         
+        // 打印交易详情
+        println!("交易哈希: {}", tx_with_groups.get_tx_view().hash());
+        println!("交易输入数量: {}", tx_with_groups.get_tx_view().inputs().len());
+        println!("交易输出数量: {}", tx_with_groups.get_tx_view().outputs().len());
+
+        // 连接到测试网节点
+        let ckb_client = CkbRpcClient::new(&network_info.url);
+        
+        let result = ckb_client.send_transaction(packed_tx.into(), Some(OutputsValidator::Passthrough));
+                
+                match result {
+                    Ok(tx_hash) => {
+                        println!("交易发送成功，交易哈希: {}", tx_hash);
+                        assert!(true);
+                    },
+                    Err(err) => {
+                        println!("交易发送失败: {}", err);
+                        assert!(false, "交易发送失败: {}", err);
+                    }
+                }
         Ok(())
     }
 
@@ -491,7 +519,7 @@ mod tx_pool_accept_tests {
         let mut configuration = TransactionBuilderConfiguration::new_with_network(network_info.clone())?;
         
         // 增加手续费率，确保交易能够被接受
-        configuration.fee_rate = 2000; // 将默认的1000提高到2000，确保有足够的手续费
+        configuration.fee_rate = 1000;
         
         // 创建V2多签配置
         let multisig_config = MultisigConfig::new_with(
