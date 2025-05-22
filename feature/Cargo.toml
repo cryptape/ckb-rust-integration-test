@@ -61,5 +61,5 @@ test = []
 clap = { version = "4.5", features = ["derive"] }
 httpmock = "0.6"
 tempfile = "3.19.1"
-ckb-sdk = { git = "https://github.com/eval-exec/ckb-sdk-rust", rev = "b18ede0bde949a27896c2d64837eada4899e5666" }
+ckb-sdk = { git = "https://github.com/eval-exec/ckb-sdk-rust", rev = "e6379b58106c8747bf9014ce773448e77d13c81c" }
 rstest = "0.18.2"
