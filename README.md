@@ -109,4 +109,8 @@ Before submitting a PR, please ensure:
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the LICENSE file for details
+
+## Contact
+
+If you have any questions, please submit them through GitHub Issues.
