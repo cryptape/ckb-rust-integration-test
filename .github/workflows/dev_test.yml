@@ -1,0 +1,44 @@
+name: dev test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test
+        run: |
+          bash start_ckb_node.sh
+          cd feature
+          rustup toolchain install nightly
+          cargo +nightly test dev -- --nocapture --format=json -Z unstable-options --report-time > test-report.json
+      - name: json to report md
+        if: failure()
+        run: |
+          cd feature
+          cargo install markdown-test-report
+          markdown-test-report test-report.json -o test-report.md
+      - name: Upload to Qiniu
+        if: failure()
+        uses: gpBlockchain/upload-to-qiniu-action@main
+        with:
+          access_key: ${{ secrets.ACCESS_KEY }}
+          secret_key: ${{ secrets.SECRET_KEY }}
+          bucket_name: acceptance-test
+          key: ckb-rust-integration-test/test-report.md
+          local_file: /home/runner/work/ckb-rust-integration-test/ckb-rust-integration-test/feature/test-report.md
+      - name: print download url
+        if: failure()
+        run: |
+          log_message="https://github-test-logs.ckbapp.dev/ckb-rust-integration-test/test-report.md"
+          echo "::set-output name=log_message::$log_message"
+          echo $log_message
