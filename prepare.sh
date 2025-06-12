@@ -9,3 +9,6 @@ cd ckb-light-client-rpc-mock-data
 git checkout 03526cf054f7e56b88b073ddfe4be9bdc7c8e8c0
 pip install -r requirements.txt
 python api/index.py > index.log 2>&1 &
+cd ../
+cd docker
+docker compose up -d

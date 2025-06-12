@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  ckb:
+    image: nervos/ckb:v0.202.0
+    user: root
+    ports:
+      - 8114:8114   # rpc
+      - 8115:8115   # p2p network
+    volumes:
+      - ./layer1/ckb:/var/lib/ckb
+    command: [ "run", "-C", "/var/lib/ckb" ]
+    networks:
+      custom_bridge:
+        ipv4_address: 192.168.1.2
+
+  ckb-miner:
+    image: nervos/ckb:v0.202.0
+    user: root
+    volumes:
+      - ./layer1/ckb:/var/lib/ckb
+    command: [ "miner" ,"-C", "/var/lib/ckb" ]
+    networks:
+      custom_bridge:
+        ipv4_address: 192.168.1.3
+
+  ckb-light-client:
+    image: jiangxianliang/ckb-light-client
+    user: root
+    ports:
+      - 9000:9000   # light client rpc
+    entrypoint: /bin/ckb-light-client
+    volumes:
+      - ./light-client:/tmp
+    command: ["run", "--config-file", "/tmp/testnet.toml"]
+    networks:
+      custom_bridge:
+        ipv4_address: 192.168.1.4
+#    image: jiangxianliang/ckb-light-client:latest
+#      entrypoint: /bin/ckb-light-client
+#      command: [ "--help" ]
+#      ports:
+#        - 9000:9000   # light client rpc
+#      volumes:
+#        - ./light-client:/bin/
+#      environment:
+#        RUST_LOG: info
+#        ckb_light_client: trace
+networks:
+  custom_bridge:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
