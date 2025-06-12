@@ -2,7 +2,7 @@ version: '3'
 
 services:
   ckb:
-    image: nervos/ckb:v0.202.0-rc1
+    image: nervos/ckb:v0.202.0
     ports:
       - 8114:8114   # rpc
       - 8115:8115   # p2p network
@@ -14,7 +14,7 @@ services:
         ipv4_address: 192.168.1.2
 
   ckb-miner:
-    image: nervos/ckb:v0.202.0-rc1
+    image: nervos/ckb:v0.202.0
     volumes:
       - ./layer1/ckb:/var/lib/ckb
     command: [ "miner" ,"-C", "/var/lib/ckb" ]
