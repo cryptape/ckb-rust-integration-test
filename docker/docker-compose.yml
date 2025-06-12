@@ -3,6 +3,7 @@ version: '3'
 services:
   ckb:
     image: nervos/ckb:v0.202.0
+    user: root
     ports:
       - 8114:8114   # rpc
       - 8115:8115   # p2p network
@@ -15,6 +16,7 @@ services:
 
   ckb-miner:
     image: nervos/ckb:v0.202.0
+    user: root
     volumes:
       - ./layer1/ckb:/var/lib/ckb
     command: [ "miner" ,"-C", "/var/lib/ckb" ]
@@ -24,6 +26,7 @@ services:
 
   ckb-light-client:
     image: jiangxianliang/ckb-light-client
+    user: root
     ports:
       - 9000:9000   # light client rpc
     entrypoint: /bin/ckb-light-client
